@@ -39,6 +39,7 @@ Email: admin@gmail.com
 Пароль: 1234
 Сервис будет доступен по адресу: http://localhost:8080
 Swagger UI: http://localhost:8080/swagger-ui/index.htm
+Для начала работы с веб-интерфейсом откройте страницу index.html (страница авторизации)
 
    API:
 
