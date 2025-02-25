@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактирование задачи</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f2f2f2;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        input[type="text"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            resize: vertical;
+        }
+        input[disabled] {
+            background-color: #e9e9e9;
+            cursor: not-allowed;
+        }
+        input[type="submit"] {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Редактирование задачи</h2>
+    <form id="editTaskForm">
+        <div class="form-group">
+            <label for="title">Заголовок:</label>
+            <input type="text" id="title" name="title" readonly>
+        </div>
+        <div class="form-group">
+            <label for="description">Описание:</label>
+            <textarea id="description" name="description" rows="4" readonly></textarea>
+        </div>
+        <div class="form-group">
+            <label for="priority">Приоритет:</label>
+            <select id="priority" name="priority" disabled>
+                <option value="низкий">низкий</option>
+                <option value="средний">средний</option>
+                <option value="высокий">высокий</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="status">Статус:</label>
+            <select id="status" name="status" required>
+                <option value="в ожидании">в ожидании</option>
+                <option value="в процессе">в процессе</option>
+                <option value="завершено">завершено</option>
+            </select>
+        </div>
+        <input type="submit" value="Сохранить">
+    </form>
+</div>
+
+<script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const taskId = urlParams.get('task_id');
+        const token = sessionStorage.getItem('jwtToken');
+        const editTaskForm = document.getElementById('editTaskForm');
+
+        fetch(`http://localhost:8080/getbytask_id?task_id=${taskId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            }
+        })
+        .then(response => response.json())
+        .then(taskData => {
+            document.getElementById('title').value = taskData.body.title;
+            document.getElementById('description').value = taskData.body.description;
+            document.getElementById('priority').value = taskData.body.priority;
+            document.getElementById('status').value = taskData.body.status;
+        })
+        .catch(error => {
+            console.error('Ошибка загрузки данных о задаче:', error);
+        });
+
+
+        editTaskForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const newStatus = document.getElementById('status').value;
+
+            const formData = new FormData(editTaskForm);
+                const id = sessionStorage.getItem('id');
+                const data = {
+                    id: taskId,
+                    title: formData.get('title'),
+                    description: formData.get('description'),
+                    priority: formData.get('priority'),
+                    status: formData.get('status'),
+                    performer: formData.get('performer')
+                };
+            fetch(`http://localhost:8080/edit`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.text())
+.then(data => {
+    if (data.includes("Задача успешно обновлена")) {
+        alert("Успех: " + data.body);
+           window.location.href = 'tasks.html';
+    } else if (data.includes("Ошибка")) {
+        alert("Ошибка: " + data.body);
+    }
+})
+            .catch(error => {
+                console.error('Ошибка изменения статуса:', error);
+                alert('Произошла ошибка при изменении статуса.');
+            });
+        });
+    </script>
+</body>
+</html>

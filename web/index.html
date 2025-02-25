@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Авторизация</title>
+  <style>
+    body {
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      background-color: #f2f2f2;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    form {
+      width: 300px;
+      margin: 0 auto;
+      padding: 80px;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    label {
+      display: block;
+      text-align: left;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+
+    input[type="submit"] {
+      background-color: #333;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+<h1>Авторизация</h1>
+<form id="registrationForm">
+  <label for="email">Email:</label>
+  <input type="text" id="email" name="email" required><br><br>
+
+  <label for="password">Пароль:</label>
+  <input type="password" id="password" name="password" required><br><br>
+
+  <input type="submit" value="Войти">
+</form>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+<script>
+  document.getElementById('registrationForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+
+    const user = {
+      email: email,
+      password: password
+    };
+
+    axios.post('http://localhost:8080/authorization', user, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => {
+
+      if (response.data !=0) {
+      const jwtToken = response.data.body;
+      sessionStorage.setItem('jwtToken', jwtToken);
+     const decodedToken = parseJwt(jwtToken);
+const userId = decodedToken.userId;
+   sessionStorage.setItem('email', email);
+ sessionStorage.setItem('id', userId);
+       if (email === "admin@gmail.com") {
+   window.location.href = "profile.html";
+} else {
+   window.location.href = "profileUser.html";
+}
+      } else {
+        console.log('Введены неправильные данные');
+        alert('Введены неправильные данные');
+      }
+    })
+    .catch(error => {
+      console.error('Ошибка при отправке запроса:', error);
+    });
+
+    function parseJwt(token) {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');  // Для декодирования base64URL
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+
+    return JSON.parse(jsonPayload);
+}
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отображение задач</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f2f2f2;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 20px;
+        }
+        .task {
+            width: 300px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin: 10px;
+            padding: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        .task h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        .task p {
+            margin: 5px 0;
+            color: #666;
+        }
+        .task button {
+            margin-top: 10px;
+        }
+        .comments-section {
+            margin-top: 15px;
+        }
+        .comment {
+            background-color: #f9f9f9;
+            padding: 5px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .comment textarea {
+            width: 100%;
+            height: 50px;
+        }
+        .comment button {
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+<h1>Отображение задач</h1>
+<div class="container" id="tasksContainer"></div>
+<button onclick="goBack()">Вернуться назад</button>
+
+<script>
+        function goBack() {
+            window.history.back();
+        }
+
+        const tasksContainer = document.getElementById('tasksContainer');
+        const token = sessionStorage.getItem('jwtToken');
+        const id = sessionStorage.getItem('id');
+         const email = sessionStorage.getItem('email');
+
+
+        if (id) {
+            const url = `http://localhost:8080/getbyuser?user_id=${id}`;
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!Array.isArray(data.body)) {
+                    console.error('Получены некорректные данные', data.body);
+                    const errorMessageElement = document.createElement('p');
+                    errorMessageElement.textContent = 'Произошла ошибка загрузки задач';
+                    tasksContainer.appendChild(errorMessageElement);
+                    return;
+                }
+
+                if (data.length === 0) {
+                    const messageElement = document.createElement('p');
+                    messageElement.textContent = 'Задачи отсутствуют';
+                    tasksContainer.appendChild(messageElement);
+                } else {
+                   data.body.forEach(task => {
+                        const taskElement = document.createElement('div');
+                        taskElement.classList.add('task');
+
+                        taskElement.innerHTML = `
+                            <h2>${task.title}</h2>
+                            <p><strong>Описание:</strong> ${task.description}</p>
+                            <p><strong>Статус:</strong> ${task.status}</p>
+                            <p><strong>Приоритет:</strong> ${task.priority}</p>
+                            <button onclick="editTask('${task.id}')">Изменить</button>
+
+                            <div class="comments-section">
+                                <h3>Комментарии</h3>
+                                <div id="comments-${task.id}">
+
+                                </div>
+                                <textarea id="new-comment-${task.id}" placeholder="Добавьте комментарий"></textarea>
+                                <button onclick="addComment('${task.id}')">Добавить комментарий</button>
+                            </div>
+                        `;
+                        tasksContainer.appendChild(taskElement);
+
+                        loadComments(task.id);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки задач:', error);
+                const errorMessageElement = document.createElement('p');
+                errorMessageElement.textContent = 'Произошла ошибка загрузки задач';
+                tasksContainer.appendChild(errorMessageElement);
+            });
+        } else {
+            const errorMessageElement = document.createElement('p');
+            errorMessageElement.textContent = 'Отсутствует идентификатор пользователя';
+            tasksContainer.appendChild(errorMessageElement);
+        }
+
+        function editTask(taskId) {
+            window.location.href = `edit_task.html?task_id=${taskId}`;
+        }
+
+        function addComment(taskId) {
+            const commentText = document.getElementById(`new-comment-${taskId}`).value;
+
+
+    if (!commentText) {
+        alert("Комментарий не может быть пустым!");
+        return;
+    }
+
+    const commentData = {
+        taskId: taskId,
+        author: email,
+        description: commentText
+    };
+
+                const url = `http://localhost:8080/createRe`;
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(commentData)
+                })
+                  .then(response => response.text())
+    .then(data => {
+        alert(data);
+        loadComments(taskId);
+    })
+                .catch(error => {
+                    console.error('Ошибка добавления комментария:', error);
+                    alert('Произошла ошибка при добавлении комментария');
+                });
+
+        }
+
+
+        function loadComments(taskId) {
+            const url = `http://localhost:8080/getRe?task_id=${taskId}`;
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                }
+            })
+            .then(response => response.json())
+    .then(comments => {
+    const commentsContainer = document.getElementById(`comments-${taskId}`);
+    commentsContainer.innerHTML = '';
+
+
+    if (comments.body === "Нет отзывов для этой задачи") {
+        const noCommentsElement = document.createElement('p');
+        noCommentsElement.textContent = comments.body;
+        commentsContainer.appendChild(noCommentsElement);
+    } else if (comments.body && comments.body.length > 0) {
+        comments.body.forEach(comment => {
+            const commentElement = document.createElement('div');
+            commentElement.classList.add('comment');
+            commentElement.innerHTML = `
+                <p><strong>Автор:</strong> ${comment.author}</p>
+                <p><strong>Комментарий:</strong> ${comment.description}</p>
+            `;
+            commentsContainer.appendChild(commentElement);
+        });
+    } else {
+        const noCommentsElement = document.createElement('p');
+        noCommentsElement.textContent = 'Комментариев нет';
+        commentsContainer.appendChild(noCommentsElement);
+    }
+})
+            .catch(error => {
+                console.error('Ошибка загрузки комментариев:', error);
+                alert('Произошла ошибка при загрузке комментариев');
+            });
+        }
+    </script>
+
+</body>
+</html>

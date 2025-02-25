@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Добавить пользователя</title>
+  <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 280px;
+        }
+        input, select {
+            width: 95%;
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            padding: 8px 12px;
+            border: none;
+            background: #28a745;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #218838;
+        }
+        #message {
+            margin-top: 8px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+  <h3>Добавить пользователя</h3>
+  <form id="userForm">
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="password" id="password" placeholder="Пароль" required>
+    <select id="role">
+      <option value="USER">Пользователь</option>
+    </select>
+    <button type="submit">Добавить</button>
+  </form>
+  <p id="message"></p>
+</div>
+
+<script>
+    document.getElementById("userForm").addEventListener("submit", async function(event) {
+        event.preventDefault();
+const token = sessionStorage.getItem('jwtToken');
+     const user = {
+        email: document.getElementById("email").value,
+        password: document.getElementById("password").value,
+        role: document.getElementById("role").value
+    };
+
+    try {
+        const response = await fetch("http://localhost:8080/Create", {
+            method: "POST",
+            headers: {
+             'Authorization': `Bearer ${token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(user)
+        });
+
+         let result;
+        const contentType = response.headers.get("Content-Type");
+
+        if (contentType && contentType.includes("application/json")) {
+            result = await response.json();
+        } else {
+            result = await response.text();
+        }
+
+        if (response.ok) {
+            document.getElementById("message").textContent = "Пользователь успешно добавлен!";
+            document.getElementById("message").style.color = "green";
+        } else {
+            document.getElementById("message").textContent = "Ошибка: " + (result.message || "Не удалось добавить пользователя.");
+            document.getElementById("message").style.color = "red";
+        }
+        }catch (error) {
+        console.error("Ошибка при отправке запроса:", error);
+        document.getElementById("message").textContent = "Ошибка соединения с сервером!";
+        document.getElementById("message").style.color = "red";
+    }
+    });
+</script>
+
+</body>
+</html>
